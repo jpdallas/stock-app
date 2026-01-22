@@ -3,7 +3,7 @@ import yfinance as yf
 import pandas as pd
 
 st.set_page_config(page_title="Stock Performance Dashboard", layout="wide")
-st.title("My Stock Performance Tracker")
+st.title("Texas Investors Tracker")
 
 tickers = ["BE","IREN","ONDS","SMR","AEM","TXN","GAME","NNOX","GOOG","JD","AMZN","ANET","SNTL","ALTO","NVDA","PLTR","MSFT","TSLA","NFLX","ORCL","TTD","SHOP","FROG","CEG","TEAM"]
 
@@ -29,7 +29,6 @@ def get_ytd(history):
 
 if st.button('Refresh Data'):
     data = []
-    # Download 10 years to ensure 5-year calculation works
     stock_data = yf.download(tickers, period="10y", group_by='ticker', progress=False)
 
     for t in tickers:
@@ -48,25 +47,26 @@ if st.button('Refresh Data'):
 
     df_display = pd.DataFrame(data)
 
-    # 1. SORT by YTD first
+    # Sort and Add Rank
     df_display = df_display.sort_values(by="YTD", ascending=False)
-
-    # 2. ADD RANK (Create a column numbered 1 to N)
     df_display['Rank'] = range(1, len(df_display) + 1)
 
-    # 3. REORDER columns to put Rank first
+    # Reorder columns
     column_order = ['Rank', 'Ticker', 'Price', 'YTD', '6-Month', '1-Year', '3-Year (Ann)', '5-Year (Ann)']
     df_display = df_display[column_order]
 
-    # 4. Format the numbers for display
+    # Format numbers
     df_display["Price"] = df_display["Price"].apply(lambda x: f"${x:.2f}")
-    
     cols_to_format = ['YTD', '6-Month', '1-Year', '3-Year (Ann)', '5-Year (Ann)']
     for col in cols_to_format:
         df_display[col] = df_display[col].apply(lambda x: f"{x:.2f}%")
 
-    # Show table (hide the default index since we have our own Rank now)
-    st.dataframe(df_display, hide_index=True, use_container_width=True)
+    # --- NEW: STYLE THE DATAFRAME ---
+    # We use Pandas Styler to center the 'Rank' column
+    styled_df = df_display.style.set_properties(subset=['Rank'], **{'text-align': 'center'})
+
+    # Show the styled table
+    st.dataframe(styled_df, hide_index=True, use_container_width=True)
 
 else:
     st.write("Click 'Refresh Data' to load the latest market stats.")
