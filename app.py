@@ -7,7 +7,7 @@ st.title("My Stock Performance Tracker")
 
 tickers = ["BE","IREN","ONDS","SMR","AEM","TXN","GAME","NNOX","GOOG","JD","AMZN","ANET","SNTL","ALTO","NVDA","PLTR","MSFT","TSLA","NFLX","ORCL","TTD","SHOP","FROG","CEG","TEAM"]
 
-# 1. Helpers return RAW FLOATS now (no formatting yet)
+# 1. Helpers return RAW FLOATS
 def get_total_return(history, days):
     if len(history) < days: return 0.0
     start = history['Close'].iloc[-days]
@@ -35,7 +35,6 @@ if st.button('Refresh Data'):
     for t in tickers:
         df = stock_data if len(tickers) == 1 else stock_data[t]
         
-        # Store raw numbers so we can sort them later
         metrics = {
             "Ticker": t,
             "Price": df['Close'].iloc[-1],
@@ -47,22 +46,26 @@ if st.button('Refresh Data'):
         }
         data.append(metrics)
 
-    # Create the DataFrame
     df_display = pd.DataFrame(data)
 
-    # SORTING HAPPENS HERE
-    # Sort by YTD descending (High to Low)
+    # 1. SORT by YTD first
     df_display = df_display.sort_values(by="YTD", ascending=False)
 
-    # Apply formatting (Add % and $ signs) just for display
-    # We use a simple lambda function to format the columns
+    # 2. ADD RANK (Create a column numbered 1 to N)
+    df_display['Rank'] = range(1, len(df_display) + 1)
+
+    # 3. REORDER columns to put Rank first
+    column_order = ['Rank', 'Ticker', 'Price', 'YTD', '6-Month', '1-Year', '3-Year (Ann)', '5-Year (Ann)']
+    df_display = df_display[column_order]
+
+    # 4. Format the numbers for display
     df_display["Price"] = df_display["Price"].apply(lambda x: f"${x:.2f}")
     
     cols_to_format = ['YTD', '6-Month', '1-Year', '3-Year (Ann)', '5-Year (Ann)']
     for col in cols_to_format:
         df_display[col] = df_display[col].apply(lambda x: f"{x:.2f}%")
 
-    # Show the table
+    # Show table (hide the default index since we have our own Rank now)
     st.dataframe(df_display, hide_index=True, use_container_width=True)
 
 else:
