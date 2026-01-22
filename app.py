@@ -33,8 +33,8 @@ def get_ytd(history):
 
 if st.button('Refresh Data'):
     data = []
-    # Download 5 years of data
-    stock_data = yf.download(tickers, period="5y", group_by='ticker', progress=False)
+    # Download 10 years of data
+    stock_data = yf.download(tickers, period="10y", group_by='ticker', progress=False)
 
     for t in tickers:
         df = stock_data if len(tickers) == 1 else stock_data[t]
