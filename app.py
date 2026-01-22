@@ -3,9 +3,9 @@ import yfinance as yf
 import pandas as pd
 
 st.set_page_config(page_title="Stock Performance Dashboard", layout="wide")
-st.title("My Stock Performance Tracker")
+st.title("Texas Investors Tracker")
 
-tickers = ["AAPL", "MSFT", "GOOGL", "NVDA", "AMZN", "XLK", "RSP"]
+tickers = ["BE","IREN","ONDS","SMR","AEM","TXN","GAME","NNOX","GOOG","JD","AMZN","ANET","SNTL","ALTO","NVDA","PLTR","MSFT","TSLA","NFLX","ORCL","TTD","SHOP","FROG","CEG","TEAM"]
 
 # 1. Helper for Total Return (Absolute % change)
 # Used for periods <= 1 Year
