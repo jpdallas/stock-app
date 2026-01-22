@@ -2,20 +2,28 @@ import streamlit as st
 import yfinance as yf
 import pandas as pd
 
-# 1. Title and Setup
 st.set_page_config(page_title="Stock Performance Dashboard", layout="wide")
 st.title("My Stock Performance Tracker")
 
-# 2. Define the stocks you want to track
-# I've added a few major ones + ETFs to start
 tickers = ["AAPL", "MSFT", "GOOGL", "NVDA", "AMZN", "XLK", "RSP"]
 
-# 3. Helper function to calculate percentage change
-def get_change(history, days):
+# 1. Helper for Total Return (Absolute % change)
+# Used for periods <= 1 Year
+def get_total_return(history, days):
     if len(history) < days: return 0.0
     start = history['Close'].iloc[-days]
     end = history['Close'].iloc[-1]
     return ((end - start) / start) * 100
+
+# 2. Helper for Annualized Return (CAGR)
+# Used for periods > 1 Year
+def get_cagr(history, days):
+    if len(history) < days: return 0.0
+    start = history['Close'].iloc[-days]
+    end = history['Close'].iloc[-1]
+    years = days / 252  # Approximate trading days in a year
+    # CAGR Formula: (End/Start)^(1/n) - 1
+    return ((end / start) ** (1 / years) - 1) * 100
 
 def get_ytd(history):
     current_year = pd.Timestamp.now().year
@@ -23,29 +31,26 @@ def get_ytd(history):
     if ytd_data.empty: return 0.0
     return ((ytd_data['Close'].iloc[-1] - ytd_data['Close'].iloc[0]) / ytd_data['Close'].iloc[0]) * 100
 
-# 4. Fetch Data and Build Table
 if st.button('Refresh Data'):
     data = []
-    # Download 5 years of data for all tickers at once
+    # Download 5 years of data
     stock_data = yf.download(tickers, period="5y", group_by='ticker', progress=False)
 
     for t in tickers:
-        # Extract the specific dataframe for this ticker
         df = stock_data if len(tickers) == 1 else stock_data[t]
         
-        # Calculate metrics
         metrics = {
             "Ticker": t,
             "Price": f"${df['Close'].iloc[-1]:.2f}",
             "YTD": f"{get_ytd(df):.2f}%",
-            "6-Month": f"{get_change(df, 126):.2f}%",
-            "1-Year": f"{get_change(df, 252):.2f}%",
-            "3-Year": f"{get_change(df, 756):.2f}%",
-            "5-Year": f"{get_change(df, 1260):.2f}%"
+            "6-Month": f"{get_total_return(df, 126):.2f}%",
+            "1-Year": f"{get_total_return(df, 252):.2f}%",
+            # Switch to Annualized (CAGR) for multi-year
+            "3-Year (Ann)": f"{get_cagr(df, 756):.2f}%",
+            "5-Year (Ann)": f"{get_cagr(df, 1260):.2f}%"
         }
         data.append(metrics)
 
-    # Display as a clean interactive dataframe
     st.dataframe(pd.DataFrame(data), hide_index=True, use_container_width=True)
 
 else:
