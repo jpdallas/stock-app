@@ -3,7 +3,7 @@ import yfinance as yf
 import pandas as pd
 
 st.set_page_config(page_title="Stock Performance Dashboard", layout="wide")
-st.title("Group Stock Performance Tracker")
+st.title("Texas Investors")
 
 # 1. Define the full dataset with Owners and Company Names
 portfolio_data = [
