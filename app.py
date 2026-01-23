@@ -38,18 +38,7 @@ portfolio_data = [
 tickers = [item["Ticker"] for item in portfolio_data]
 
 # 2. Performance Calculation Helpers
-def get_total_return(history, days):
-    if len(history) < days: return 0.0
-    start = history['Close'].iloc[-days]
-    end = history['Close'].iloc[-1]
-    return ((end - start) / start) * 100
-
-def get_cagr(history, days):
-    if len(history) < days: return 0.0
-    start = history['Close'].iloc[-days]
-    end = history['Close'].iloc[-1]
-    years = days / 252
-    return ((end / start) ** (1 / years) - 1) * 100
+# (Removed the multi-year helpers since we only need YTD now)
 
 def get_ytd(history):
     current_year = pd.Timestamp.now().year
@@ -59,60 +48,51 @@ def get_ytd(history):
 
 if st.button('Refresh Data'):
     data = []
-    # Download 10 years of data
-    stock_data = yf.download(tickers, period="10y", group_by='ticker', progress=False)
+    # Download 2 years of data (optimized since we don't need 10y anymore)
+    stock_data = yf.download(tickers, period="2y", group_by='ticker', progress=False)
 
-    # Loop through our portfolio dictionary so we can keep track of names
     for item in portfolio_data:
         t = item["Ticker"]
         
-        # Handle case where download might fail or return empty for a specific ticker
         try:
             df = stock_data if len(tickers) == 1 else stock_data[t]
             
-            # If the dataframe is empty (e.g. invalid ticker), skip or fill zeros
             if df.empty:
                 continue
 
             metrics = {
-                "Rank": 0, # Placeholder, we fill this after sorting
-                "Owner": item["Owner"],     # NEW COLUMN
-                "Company": item["Company"], # NEW COLUMN
+                "Rank": 0,
+                "Owner": item["Owner"],
+                "Company": item["Company"],
                 "Ticker": t,
                 "Price": df['Close'].iloc[-1],
-                "YTD": get_ytd(df),
-                "6-Month": get_total_return(df, 126),
-                "1-Year": get_total_return(df, 252),
-                "3-Year (Ann)": get_cagr(df, 756),
-                "5-Year (Ann)": get_cagr(df, 1260)
+                "YTD": get_ytd(df)                
             }
             data.append(metrics)
         except Exception as e:
-            # If a ticker fails, we just skip it so the app doesn't crash
             pass
 
     df_display = pd.DataFrame(data)
 
-    # 1. SORT by YTD first (Highest return at top)
+    # 1. SORT by YTD first
     df_display = df_display.sort_values(by="YTD", ascending=False)
 
-    # 2. ADD RANK (1 to N)
+    # 2. ADD RANK
     df_display['Rank'] = range(1, len(df_display) + 1)
 
     # 3. REORDER columns
-    # We put Rank, Owner, and Company at the start
-    column_order = ['Rank', 'Owner', 'Company', 'Ticker', 'Price', 'YTD', '6-Month', '1-Year', '3-Year (Ann)', '5-Year (Ann)']
+    column_order = ['Rank', 'Owner', 'Company', 'Ticker', 'Price', 'YTD']
     df_display = df_display[column_order]
 
     # 4. Format numbers
     df_display["Price"] = df_display["Price"].apply(lambda x: f"${x:.2f}")
     
-    cols_to_format = ['YTD', '6-Month', '1-Year', '3-Year (Ann)', '5-Year (Ann)']
+    # Only format YTD now
+    cols_to_format = ['YTD']
     for col in cols_to_format:
         df_display[col] = df_display[col].apply(lambda x: f"{x:.2f}%")
 
     # 5. STYLE the table
-    # Center the Rank and Ticker, Left Align the Names
     styled_df = df_display.style.set_properties(subset=['Rank', 'Ticker', 'YTD'], **{'text-align': 'center'})
     
     st.dataframe(styled_df, hide_index=True, use_container_width=True)
