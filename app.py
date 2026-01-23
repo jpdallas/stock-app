@@ -5,7 +5,7 @@ import pandas as pd
 st.set_page_config(page_title="Stock Performance Dashboard", layout="wide")
 st.title("Texas Investors")
 
-# 1. Define the full dataset with Owners and Company Names
+# 1. Define the full dataset
 portfolio_data = [
     {"Owner": "Bart McCollum", "Company": "BLOOM ENERGY CORPORATION", "Ticker": "BE"},
     {"Owner": "Derek Long", "Company": "IREN LIMITED", "Ticker": "IREN"},
@@ -34,11 +34,7 @@ portfolio_data = [
     {"Owner": "Chris Jaquez", "Company": "ATLASSIAN CORPORATION", "Ticker": "TEAM"},
 ]
 
-# Extract just the symbols list for the API download
 tickers = [item["Ticker"] for item in portfolio_data]
-
-# 2. Performance Calculation Helpers
-# (Removed the multi-year helpers since we only need YTD now)
 
 def get_ytd(history):
     current_year = pd.Timestamp.now().year
@@ -48,17 +44,13 @@ def get_ytd(history):
 
 if st.button('Refresh Data'):
     data = []
-    # Download 2 years of data (optimized since we don't need 10y anymore)
     stock_data = yf.download(tickers, period="2y", group_by='ticker', progress=False)
 
     for item in portfolio_data:
         t = item["Ticker"]
-        
         try:
             df = stock_data if len(tickers) == 1 else stock_data[t]
-            
-            if df.empty:
-                continue
+            if df.empty: continue
 
             metrics = {
                 "Rank": 0,
@@ -66,36 +58,36 @@ if st.button('Refresh Data'):
                 "Company": item["Company"],
                 "Ticker": t,
                 "Price": df['Close'].iloc[-1],
-                "YTD": get_ytd(df)                
+                "YTD": get_ytd(df)
             }
             data.append(metrics)
-        except Exception as e:
+        except Exception:
             pass
 
     df_display = pd.DataFrame(data)
 
-    # 1. SORT by YTD first
+    # Sort, Rank, and Reorder
     df_display = df_display.sort_values(by="YTD", ascending=False)
-
-    # 2. ADD RANK
     df_display['Rank'] = range(1, len(df_display) + 1)
+    df_display = df_display[['Rank', 'Owner', 'Company', 'Ticker', 'Price', 'YTD']]
 
-    # 3. REORDER columns
-    column_order = ['Rank', 'Owner', 'Company', 'Ticker', 'Price', 'YTD']
-    df_display = df_display[column_order]
-
-    # 4. Format numbers
+    # Formatting
     df_display["Price"] = df_display["Price"].apply(lambda x: f"${x:.2f}")
-    
-    # Only format YTD now
-    cols_to_format = ['YTD']
-    for col in cols_to_format:
-        df_display[col] = df_display[col].apply(lambda x: f"{x:.2f}%")
+    df_display["YTD"] = df_display["YTD"].apply(lambda x: f"{x:.2f}%")
 
-    # 5. STYLE the table
-    styled_df = df_display.style.set_properties(subset=['Rank', 'Ticker', 'YTD'], **{'text-align': 'center'})
+    # --- STYLING LOGIC START ---
     
+    # 1. Define highlight function
+    def highlight_msft(row):
+        # Apply 'font-weight: bold' if the ticker is MSFT, otherwise nothing
+        return ['font-weight: bold' if row['Ticker'] == 'MSFT' else '' for _ in row]
+
+    # 2. Apply the highlight function AND the centering at the same time
+    styled_df = df_display.style.apply(highlight_msft, axis=1)\
+                                .set_properties(subset=['Rank', 'Ticker', 'YTD'], **{'text-align': 'center'})
+
     st.dataframe(styled_df, hide_index=True, use_container_width=True)
+    # --- STYLING LOGIC END ---
 
 else:
     st.write("Click 'Refresh Data' to load the latest market stats.")
