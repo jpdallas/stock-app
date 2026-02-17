@@ -38,9 +38,22 @@ tickers = [item["Ticker"] for item in portfolio_data]
 
 def get_ytd(history):
     current_year = pd.Timestamp.now().year
-    ytd_data = history[history.index.year == current_year]
-    if ytd_data.empty: return 0.0
-    return ((ytd_data['Close'].iloc[-1] - ytd_data['Close'].iloc[0]) / ytd_data['Close'].iloc[0]) * 100
+    prev_year = current_year - 1
+    
+    # Try to get the last trading day of the previous year
+    prev_year_data = history[history.index.year == prev_year]
+    
+    if not prev_year_data.empty:
+        start_price = prev_year_data['Close'].iloc[-1]
+    else:
+        # Fallback if the stock IPO'd this year and has no prior year data
+        ytd_data = history[history.index.year == current_year]
+        if ytd_data.empty: return 0.0
+        start_price = ytd_data['Close'].iloc[0]
+        
+    end_price = history['Close'].iloc[-1]
+    
+    return ((end_price - start_price) / start_price) * 100
 
 if st.button('Refresh Data'):
     data = []
