@@ -19,7 +19,7 @@ portfolio_data = [
     {"Owner": "Collin Comer", "Company": "JD.COM, INC.", "Ticker": "JD"},
     {"Owner": "George Gibson", "Company": "AMAZON.COM, INC.", "Ticker": "AMZN"},
     {"Owner": "Don Gaskins", "Company": "ARISTA NETWORKS, INC.", "Ticker": "ANET"},
-    {"Owner": "Tom McCarthy", "Company": "SENTINEL HOLDINGS LTD.", "Ticker": "SNTL"},
+    {"Owner": "Tom McCarthy", "Company": "SENTINELONE", "Ticker": "S"},
     {"Owner": "John Peavy", "Company": "ALTO INGREDIENTS, INC.", "Ticker": "ALTO"},
     {"Owner": "Craig Penfold", "Company": "NVIDIA CORPORATION", "Ticker": "NVDA"},
     {"Owner": "Phillip Bankhead", "Company": "PALANTIR TECHNOLOGIES INC.", "Ticker": "PLTR"},
