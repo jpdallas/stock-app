@@ -78,11 +78,14 @@ if st.button('Refresh Data'):
     avg_return = df_display["YTD"].mean()
     best = df_display.iloc[0]
     worst = df_display.iloc[-1]
+    pct_positive = (df_display["YTD"] > 0).sum() / len(df_display) * 100
+    positive_count = (df_display["YTD"] > 0).sum()
 
-    col1, col2, col3 = st.columns(3)
+    col1, col2, col3, col4 = st.columns(4)
     col1.metric("📊 Group Average Return", f"{avg_return:.2f}%")
     col2.metric("🥇 Leader", f"{best['Owner']} ({best['Ticker']})", f"{best['YTD']:.2f}%")
     col3.metric("📉 Trailing", f"{worst['Owner']} ({worst['Ticker']})", f"{worst['YTD']:.2f}%")
+    col4.metric("✅ In Positive Territory", f"{pct_positive:.0f}%", f"{positive_count} of {len(df_display)} picks")
 
     st.divider()
     # --- END METRICS ---
