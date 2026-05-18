@@ -5,7 +5,6 @@ import pandas as pd
 st.set_page_config(page_title="Stock Performance Dashboard", layout="wide")
 st.title("Texas Investors")
 
-# 1. Define the full dataset
 portfolio_data = [
     {"Owner": "Bart McCollum", "Company": "BLOOM ENERGY CORPORATION", "Ticker": "BE"},
     {"Owner": "Derek Long", "Company": "IREN LIMITED", "Ticker": "IREN"},
@@ -39,20 +38,14 @@ tickers = [item["Ticker"] for item in portfolio_data]
 def get_ytd(history):
     current_year = pd.Timestamp.now().year
     prev_year = current_year - 1
-    
-    # Try to get the last trading day of the previous year
     prev_year_data = history[history.index.year == prev_year]
-    
     if not prev_year_data.empty:
         start_price = prev_year_data['Close'].iloc[-1]
     else:
-        # Fallback if the stock IPO'd this year and has no prior year data
         ytd_data = history[history.index.year == current_year]
         if ytd_data.empty: return 0.0
         start_price = ytd_data['Close'].iloc[0]
-        
     end_price = history['Close'].iloc[-1]
-    
     return ((end_price - start_price) / start_price) * 100
 
 if st.button('Refresh Data'):
@@ -64,7 +57,6 @@ if st.button('Refresh Data'):
         try:
             df = stock_data if len(tickers) == 1 else stock_data[t]
             if df.empty: continue
-
             metrics = {
                 "Rank": 0,
                 "Owner": item["Owner"],
@@ -78,29 +70,34 @@ if st.button('Refresh Data'):
             pass
 
     df_display = pd.DataFrame(data)
-
-    # Sort, Rank, and Reorder
     df_display = df_display.sort_values(by="YTD", ascending=False)
     df_display['Rank'] = range(1, len(df_display) + 1)
     df_display = df_display[['Rank', 'Owner', 'Company', 'Ticker', 'Price', 'YTD']]
+
+    # --- AVERAGE RETURN METRICS ---
+    avg_return = df_display["YTD"].mean()
+    best = df_display.iloc[0]
+    worst = df_display.iloc[-1]
+
+    col1, col2, col3 = st.columns(3)
+    col1.metric("📊 Group Average Return", f"{avg_return:.2f}%")
+    col2.metric("🥇 Leader", f"{best['Owner']} ({best['Ticker']})", f"{best['YTD']:.2f}%")
+    col3.metric("📉 Trailing", f"{worst['Owner']} ({worst['Ticker']})", f"{worst['YTD']:.2f}%")
+
+    st.divider()
+    # --- END METRICS ---
 
     # Formatting
     df_display["Price"] = df_display["Price"].apply(lambda x: f"${x:.2f}")
     df_display["YTD"] = df_display["YTD"].apply(lambda x: f"{x:.2f}%")
 
-    # --- STYLING LOGIC START ---
-    
-    # 1. Define highlight function
     def highlight_msft(row):
-        # Apply 'font-weight: bold' if the ticker is MSFT, otherwise nothing
         return ['font-weight: bold' if row['Ticker'] == 'MSFT' else '' for _ in row]
 
-    # 2. Apply the highlight function AND the centering at the same time
     styled_df = df_display.style.apply(highlight_msft, axis=1)\
                                 .set_properties(subset=['Rank', 'Ticker', 'YTD'], **{'text-align': 'center'})
 
     st.dataframe(styled_df, hide_index=True, use_container_width=True)
-    # --- STYLING LOGIC END ---
 
 else:
     st.write("Click 'Refresh Data' to load the latest market stats.")
